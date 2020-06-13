@@ -6,6 +6,11 @@
 \usage{
 as_prices(returns, p0 = 1)
 }
+\arguments{
+\item{returns}{Numeric vector of returns.}
+
+\item{p0}{Numeric; initial price value.}
+}
 \description{
 Converts a sequential series of returns to a series of prices which originate
 at some initial value.

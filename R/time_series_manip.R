@@ -4,6 +4,7 @@
 #' 
 #' Converts a sequential series of prices to a series of returns.
 #' 
+#' @param prices Numeric vector of returns.
 #' @export
 
 as_returns <- function(prices){
@@ -16,6 +17,8 @@ as_returns <- function(prices){
 #' Converts a sequential series of returns to a series of prices which originate
 #' at some initial value.
 #' 
+#' @param returns Numeric vector of returns.
+#' @param p0 Numeric; initial price value.
 #' @export
 
 as_prices <- function(returns, p0 = 1){

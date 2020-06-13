@@ -6,6 +6,9 @@
 \usage{
 as_returns(prices)
 }
+\arguments{
+\item{prices}{Numeric vector of returns.}
+}
 \description{
 Converts a sequential series of prices to a series of returns.
 }

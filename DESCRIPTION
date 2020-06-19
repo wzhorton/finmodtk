@@ -1,7 +1,7 @@
 Package: finmodtk
 Type: Package
 Title: Financial Modeling Toolkit
-Version: 0.0.2b
+Version: 0.0.3
 Date: 2020-06-13
 Author: W.Zachary Horton
 Maintainer: Same <yourfault@somewhere.net>

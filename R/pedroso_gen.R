@@ -39,8 +39,22 @@ trend_DCC <- function(price_ts){
 #' 
 #' @export
 
-construct_generator <- function(Rmat, trend_inds){
+construct_generator <- function(return_mat, trend_inds, win_len = 4){
+  trend_periods <- lapply(1:(length(trend_inds)-1), function(i){
+    return_mat[,dc[i]:dc[i+1]]
+  })
   
+  lapply(trend_periods, function(rmat){
+    win_id <- as.numeric(cut(1:11, floor(ncol(rmat/win_len))))
+    win_count <- table(win_id)
+    lapply(1:length(win_count), function(i){
+      id <- names(win_count)[i]
+      rdat <- t(rmat[,win_id == id])
+      mu = colMeans(rdat)
+      sig = cov(rdat)
+      list(npts = win_count[i], mu = mu, sig = sig)
+    })
+  })
 }
 
 

@@ -3,4 +3,7 @@
 export(as_prices)
 export(as_returns)
 export(construct_generator)
+export(pedroso_synthesis)
+export(price_norm)
+export(synthesis)
 export(trend_DCC)

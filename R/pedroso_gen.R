@@ -99,8 +99,18 @@ synthesis <- function(gen_obj, ntrend, extra = 0, repl = FALSE){
 #' Pedroso Data Generation
 #'
 #' Generates data using a given price dataset using the Pedroso et. al. (2018) method.
-#' Mo
+#' Resulting prices are normalized to begin at one.
+#' 
+#' @export
 
-#pedroso_synthesis 
+pedroso_synthesis <- function(prices, ntrend, extra = 0, repl = FALSE, win_len = 4){
+  index_price <- colMeans(prices)
+  trend_bounds <- trend_DCC(index_price)
+  returns <- apply(prices, 1, as_returns)
+  fitted_plbb <- construct_generator(returns, trend_bounds, win_len)
+  synth_returns <- synthesis(fitted_plbb, ntrend, extra, repl)
+  synth_prices <- t(apply(synth_returns, 1, as_prices))
+  return(list(synth_prices = synth_prices, synth_returns, synth_returns))
+}
 
 

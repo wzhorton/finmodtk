@@ -24,3 +24,13 @@ as_returns <- function(prices){
 as_prices <- function(returns, p0 = 1){
   c(1,cumprod(returns))*p0
 }
+
+#' Normalize Prices
+#' 
+#' Normalizes price time series such that the initial price is 1 unit.
+#' 
+#' @export
+
+price_norm <- function(prices){
+  as_prices(as_returns(prices))
+}

@@ -57,5 +57,50 @@ construct_generator <- function(return_mat, trend_inds, win_len = 4){
   })
 }
 
+#' Synthesize Data
+#' 
+#' Generate/synthesize data using a generation object. This method might be
+#' described as a parametric local blocked bootstrap. Default behavior is to
+#' randomly generate a specified number of trend sequences, however the replication
+#' option can be specified to exactly match historical records. PCA recomposition
+#' is also used to generate a number of new, extra, unseen assets.
+#' 
+#' @export
+
+synthesis <- function(gen_obj, ntrend, extra = 0, repl = FALSE){
+  trend_seq <- 1:length(gen_obj)
+  if(repl == FALSE) {
+    evens <- trend_seq[trend_seq %% 2 == 0]
+    odds <- trend_seq[trend_seq %% 2 == 1]
+    trend_seq <- c(rbind(sample(evens, ceiling(ntrend/2)+1, replace = TRUE), 
+      sample(odds, ceiling(ntrend/2)+1, replace = TRUE)))
+    if(runif(1)>0.5) trend_seq <- trend_seq[-1]
+    trend_seq <- trend_seq[1:ntrend]
+  }
+  
+  return_blocks <- lapply(trend_seq, function(tr){
+    go <- gen_obj[[tr]]
+    t(MASS::mvrnorm(go$npts, go$mu, go$sig))
+  })
+  return_out <- do.call(cbind, return_blocks)
+  
+  if(extra >= 1){
+    pca_returns <- prcomp(t(return_out), center = FALSE)
+    mn_pca <- rowMeans(pca_returns$rotation)
+    vr_pca <- cov(t(pca_returns$rotation))
+    new_rot <- t(MASS::mvrnorm(extra, mn_pca, vr_pca))
+    aug_rot <- cbind(pca_returns$scores, new_rot)
+    return_out <- t(pca_returns$x%*%t(aug_rot))
+  }
+  
+  return_out
+}
+
+#' Pedroso Data Generation
+#'
+#' Generates data using a given price dataset using the Pedroso et. al. (2018) method.
+#' Mo
+
+#pedroso_synthesis 
 
 

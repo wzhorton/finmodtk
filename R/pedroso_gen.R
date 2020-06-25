@@ -16,21 +16,22 @@
 #' 
 #' @export
 
-trend_DCC <- function(price_ts){
+trend_DCC <- function(price_ts, theta = 0.5, min_len = 2){
   dc <- ext <- 1
-  for(i in 1:length(price)){
+  for(i in 1:length(price_ts)){
     if(length(dc) %% 2 == 1){ #down trend
-      ext <- which.min(price[ext:i]) + ext - 1
+      ext <- which.min(price_ts[ext:i]) + ext - 1
     } else { #up trend
-      ext <- which.max(price[ext:i]) + ext - 1
+      ext <- which.max(price_ts[ext:i]) + ext - 1
     }
     
-    if(abs((price[i] - price[ext])/price[ext]) > theta){
+    if(abs((price_ts[i] - price_ts[ext])/price_ts[ext]) > theta){
       dc <- c(dc, ext)
     }
   }
-  if(dc[2]-dc[1] < 2) dc <- dc[-2] #Trend minimum here
-  return(c(dc,length(price)))
+  dc <- c(dc,length(price_ts))
+  while(dc[2]-dc[1] <= min_len) dc <- dc[-2] 
+  return(dc)
 }
 
 #' Generator Construction
@@ -41,14 +42,19 @@ trend_DCC <- function(price_ts){
 
 construct_generator <- function(return_mat, trend_inds, win_len = 4){
   trend_periods <- lapply(1:(length(trend_inds)-1), function(i){
-    return_mat[,dc[i]:dc[i+1]]
+    return_mat[,trend_inds[i]:(trend_inds[i+1]-1), drop = FALSE]
   })
   
   lapply(trend_periods, function(rmat){
-    win_id <- as.numeric(cut(1:11, floor(ncol(rmat/win_len))))
+    nwins <- max(floor(ncol(rmat)/win_len),1)
+    if(nwins > 1){
+      win_id <- as.numeric(cut(1:ncol(rmat), nwins))
+    } else {
+      win_id <- rep(1, ncol(rmat))
+    }
     win_count <- table(win_id)
     lapply(1:length(win_count), function(i){
-      id <- names(win_count)[i]
+      id <- as.numeric(names(win_count)[i])
       rdat <- t(rmat[,win_id == id])
       mu = colMeans(rdat)
       sig = cov(rdat)
@@ -80,7 +86,10 @@ synthesis <- function(gen_obj, ntrend, extra = 0, repl = FALSE){
   
   return_blocks <- lapply(trend_seq, function(tr){
     go <- gen_obj[[tr]]
-    t(MASS::mvrnorm(go$npts, go$mu, go$sig))
+    blockwin <- lapply(go, function(gowin){
+      t(MASS::mvrnorm(gowin$npts, gowin$mu, gowin$sig))
+    })
+    do.call(cbind, blockwin)
   })
   return_out <- do.call(cbind, return_blocks)
   
@@ -103,14 +112,14 @@ synthesis <- function(gen_obj, ntrend, extra = 0, repl = FALSE){
 #' 
 #' @export
 
-pedroso_synthesis <- function(prices, ntrend, extra = 0, repl = FALSE, win_len = 4){
+pedroso_synthesis <- function(prices, ntrend, theta = 1, extra = 0, repl = FALSE, win_len = 4){
   index_price <- colMeans(prices)
-  trend_bounds <- trend_DCC(index_price)
-  returns <- apply(prices, 1, as_returns)
+  trend_bounds <- trend_DCC(index_price, theta)
+  returns <- t(apply(prices, 1, as_returns))
   fitted_plbb <- construct_generator(returns, trend_bounds, win_len)
   synth_returns <- synthesis(fitted_plbb, ntrend, extra, repl)
   synth_prices <- t(apply(synth_returns, 1, as_prices))
-  return(list(synth_prices = synth_prices, synth_returns, synth_returns))
+  return(list(synth_prices = synth_prices, synth_returns = synth_returns))
 }
 
 

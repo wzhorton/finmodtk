@@ -4,7 +4,14 @@
 \alias{pedroso_synthesis}
 \title{Pedroso Data Generation}
 \usage{
-pedroso_synthesis(prices, ntrend, extra = 0, repl = FALSE, win_len = 4)
+pedroso_synthesis(
+  prices,
+  ntrend,
+  theta = 1,
+  extra = 0,
+  repl = FALSE,
+  win_len = 4
+)
 }
 \description{
 Generates data using a given price dataset using the Pedroso et. al. (2018) method.

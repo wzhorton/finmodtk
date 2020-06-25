@@ -22,7 +22,7 @@ as_returns <- function(prices){
 #' @export
 
 as_prices <- function(returns, p0 = 1){
-  c(1,cumprod(returns))*p0
+  c(1,cumprod(returns+1))*p0
 }
 
 #' Normalize Prices

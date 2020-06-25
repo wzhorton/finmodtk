@@ -4,7 +4,7 @@
 \alias{trend_DCC}
 \title{Detect Trend Change Points}
 \usage{
-trend_DCC(price_ts)
+trend_DCC(price_ts, theta = 0.5, min_len = 2)
 }
 \description{
 Detect Trend Change Points

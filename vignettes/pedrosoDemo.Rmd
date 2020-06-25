@@ -1,0 +1,23 @@
+---
+title: "Pedroso Demo"
+author: "Zach Horton"
+date: "6/24/2020"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Pedroso Generation Demo}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+For this demonstration, we will use random walk data as it can easily be generated. Note that the price series associated with a specific asset should be organized along a row. Here we do replication generation.
+
+```{r, fig.width = 10, fig.height=5, fig.align='center'}
+library(finmodtk)
+price_series <- t(sapply(1:15, function(i) cumsum(rnorm(100))+1000))
+norm_series <- t(apply(price_series, 1, price_norm))
+synth <- pedroso_synthesis(price_series, theta = 1, extra = 0, repl = TRUE)
+par(mfrow = c(1,2))
+matplot(t(norm_series), type = "l", lty = 1, main = "Original")
+matplot(t(synth$synth_prices), type = "l", lty = 1, main = "Original")
+```
+

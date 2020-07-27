@@ -7,8 +7,8 @@ Author: W.Zachary Horton
 Maintainer: Same <yourfault@somewhere.net>
 Description: Financial Modeling Toolkit provides helpful tools and methods for handling time-series financial data. 
 License: GPL-3
-Imports: Rcpp (>= 1.0.4.6)
+Imports: Rcpp (>= 1.0.4.6), TTR, rhdf5
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 LinkingTo: Rcpp, RcppArmadillo
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1

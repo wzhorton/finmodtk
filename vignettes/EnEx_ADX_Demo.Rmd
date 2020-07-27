@@ -1,0 +1,153 @@
+---
+title: "Entrance/Exit Evaluation Demo"
+author: "Zach Horton"
+date: "7/11/2020"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Entrance/Exit Evaluation Demo}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+Often a technical investment strategy is evaluated using some function of profit. Win/loss ratio or average return are common examples. However, a strategy might be thought of as two separate elements: an entrance component and an exit component. Evaluating these components independently can reveal strengths and weaknesses of a strategy, allowing an investor to use it appropriately. In this write-up we propose a framework for seperate entrance/exit evaluation, devlop an example metric, and demonstrate its use on a simple Forex investment strategy.
+
+
+## Entrance/Exit Evaluation
+
+In short, a successful strategy is profitable. However, assessing a strategy only on, say, the average return is often quite dissappointing. One may discover a strategy is overall "market-neutral" and has an average return close to zero. However, it is possible that said strategy is able to enter positions that are likely profitable but is not able to capitalize on them well when exiting. Alternatively the strategy may enter positions during suboptimal conditions yet closes at nearly optimal points. Overall, such a strategy will appear mediocre with respect to average returns, yet still holds value in being partially successful. Examining entrance and exit performance independently then gives the investor information regarding the nature of a strategy's strengths and weaknesses. 
+
+The concept of piecewise strategy evaluation is inherently valuable in assembling a profitable trading system. The framework is nearly universal no matter the asset, time-frame, or market. Real value lies in exploring other seperable strategy frameworks and devising corresponding metrics. Those we explore here only comprise a small portion of what can be measured and learned from.
+
+#### Entrance Evaluation
+
+Perhaps the clearer of the two facets we consider is that of entrance evaluation. In short, we rely on the notion that a good entrance strategy yeilds high *potential* returns. One metric for this is, given a known trade entrance, the most that could have been made within a specific time horizon. In other words, good entrance strategies ought to have high maximum possible returns. Conceptually this is appealing as it suggests to an investor how much they *could* make, given they enter a position using the strategy.
+
+Finding the maximum potential return for a given entrance can be done by finding the best possible time to exit (e.g. the largest price for a buy) after the entrance within a time window.
+
+#### Exit Evaluation
+
+Evaluating an exit strategy can be done in a similar fashion. In principle, a good exit strategy ought to have high maximum possible returns. Again, the appeal is in quantifying potential gain. The maximum potential return for a given exit can be computed by finding the best possible time to enter a position before the exit within a time window. In other words, a good exit strategy can capitalize on a large number of possible entrances.
+
+#### Efficiency Evaluation
+
+Beyond just looking at maximum possible returns for the two components, one can compute a ratio between the maximum return and the obtained return (which involves employing both the entrance and exit strategies). In some sense, this represents how efficiently a strategy can convert potential returns into realized returns. This metric is flawed when examining losing trades, but can be a crude measure of effectiveness otherwise.
+
+## Demonstration
+
+We now proceed with a case study which evaluates a basic Forex investment strategy.
+
+#### Data and Strategy Details
+
+The data we use are minute-level exchange rates between AUD/USD for the year 2019, making 299629 periods in total. The strategy we consider makes use of the ADX indicator. The ADX indicator is traditionally considered a measure of trend strength. Values less than roughly 25 signal a weak trend. Values above 25 suggest the presence of a trend while values greater than about 50 indicate a strong trend. Other uses of ADX include momentum indication, regime switch confirmation, etc. However, we restrict our scope to this simplest case of trend strength. The indicator parameters we select involve a 14 perdiod DX calculation (27 period ADX) and a simple moving average. The chart below shows a histogram of ADX values.
+
+```{r, echo = F, fig.align='center', fig.height=4, fig.width=5}
+library(TTR)
+library(rhdf5)
+audusd_2019 <- h5read("~/Research/Packages/finmodtk/private/FX Data/2019_AUD_USD.hdf5", "/AUD_USD/block0_values") #OHLC minute data
+adx <- TTR::ADX(t(audusd_2019[-1,]))
+hist(adx)
+```
+
+
+No strategy is complete without entrance and exit rules, which we base off the cutoff rules of thumb. Specifically, our strategy is to enter a trade when the ADX reaches 50 and to exit the trade when the ADX falls below 25. The type of trade (buy or sell) is determined using DXp and DXn, quantities used in computing the ADX which denote the strength of upward (positive) or downward (negative) trends, where we buy if DXp is larger than DXn and sell otherwise. Conceptually this amounts to entering during strong trends and exiting when the trend has concluded. A crude strategy to be sure, but not unreasonable, especially for inexperienced traders. 
+
+#### Overall Returns
+
+Consider the chart below which displays a histogram of profits from our strategy (in pips) with numerical summary below.
+
+```{r, echo = F, fig.align='center', fig.height=4, fig.width=5}
+n <- nrow(adx)
+in_trade <- FALSE
+signal <- as.character(rep(NA, n)) #Buy, Sell, Close
+price <- as.numeric(rep(NA, n))
+best_enter_price <- as.numeric(rep(NA, n))
+best_exit_price <- as.numeric(rep(NA, n))
+enter_marker <- NULL
+for(i in 30:n){
+  if(in_trade == FALSE){
+    if(adx[i,"ADX"] > 50){
+      in_trade = TRUE
+      enter_marker <- i
+      if(adx[i,"DIp"] > adx[i,"DIn"]){
+        signal[i] <- "Buy"
+      } else {
+        signal[i] <- "Sell"
+      }
+      price[i] <- audusd_2019[4,i]
+    }
+  } else {
+    if(adx[i,"ADX"] < 25){
+      in_trade = FALSE
+      signal[i] <- "Close"
+      price[i] <- audusd_2019[4,i]
+      if(signal[enter_marker] == "Buy"){
+        best_enter_price[i] <- max(audusd_2019[4,enter_marker:i])
+        best_exit_price[i] <- min(audusd_2019[4,enter_marker:i])
+      } else {
+        best_enter_price[i] <- min(audusd_2019[4,enter_marker:i])
+        best_exit_price[i] <- max(audusd_2019[4,enter_marker:i])
+      }
+    }
+  }
+  #print(i)
+}
+
+sum_tab <- function(s){
+  knitr::kable(t(c(s)))
+}
+rm.neg <- function(x){
+  x[x>=0]
+}
+
+price <- price[!is.na(price)]
+signal <- signal[!is.na(signal)]
+trades <- data.frame(signal = signal, price = price)
+trades_noclose <- trades[trades$signal != "Close",]
+trades_noclose$close <- trades$price[trades$signal == "Close"]
+trades <- trades_noclose
+trades$signal_num <- 2*as.numeric(trades$signal=="Buy")-1
+rm(trades_noclose)
+trades$profit <- (trades$close - trades$price)*trades$signal_num
+trades$best_price_enter <- best_enter_price[!is.na(best_enter_price)]
+trades$best_price_exit <- best_exit_price[!is.na(best_exit_price)]
+trades$best_profit_enter <- (trades$best_price_enter - trades$price)*trades$signal_num
+trades$best_profit_exit <- (trades$close - trades$best_price_exit)*trades$signal_num
+hist(trades$profit*10000, main = "Histogram of Profits", xlab = "Pips")
+sum_tab(summary(trades$profit*10000))
+```
+
+From this perspective, our ADX strategy is not very good. In the year, 295 trades were made. The mean profit is less than 1 pip and the median is negative. Half of the trades made between -3 and 3 pips and the maximum movements are fairly small. 
+
+Now consider examining the best possible profits that could have been made within the trading windows. 
+
+```{r, echo = F, fig.align='center', fig.height=4, fig.width=9}
+par(mfrow = c(1,2))
+hist(trades$best_profit_enter*10000, main = "Max Profits : Fixed Enter", xlab = "Pips")
+hist(trades$best_profit_exit*10000, main = "Max Profits : Fixed Exit", xlab = "Pips")
+sum_tab(c(round(summary(trades$best_profit_enter*10000),4),c('------------------------------------------------'=""),round(summary(trades$best_profit_exit*10000),4)))
+```
+
+These show the potential for making pips with this strategy is quite low. The average best number of pips that can be made is in the single digits. Note though that the maximum gain for fixed entrances seems to be overall larger. Now consider the "efficiency" ratios discussed previously. The results for these are given below:
+
+```{r, echo = F, fig.align='center', fig.height=4, fig.width=9}
+par(mfrow = c(1,2))
+hist(trades$profit/trades$best_profit_enter, main = "Efficiency Ratio : Fixed Enter", xlab = "Pips Per Max")
+hist(trades$profit/trades$best_profit_exit, main = "Efficiency Ratio : Fixed Exit", xlab = "Pips Per Max")
+sum_tab(c(round(summary(trades$profit/trades$best_profit_enter),4),c('------------------------------------------------'=""),round(summary(trades$profit/trades$best_profit_exit),4)))
+```
+
+An efficiency value of -20 is rare, but quite bad. It mean that a particular trade lost 20 times when could have been made, indicating both that the strategy failed and that the trade potential was low (when potential is zero the ratio becomes infinite). However, we do expect asymmetry here as they are bounded above by 100%. To better visualize and understand these results, consider only the efficiency ratios of the winning trades (which have positive ratios):
+
+```{r, echo = F, fig.align='center', fig.height=4, fig.width=9}
+par(mfrow = c(1,2))
+hist(rm.neg(trades$profit/trades$best_profit_enter), main = "Efficiency Ratio : Fixed Enter", xlab = "Pips Per Max")
+hist(rm.neg(trades$profit/trades$best_profit_exit), main = "Efficiency Ratio : Fixed Exit", xlab = "Pips Per Max")
+sum_tab(c(round(summary(rm.neg(trades$profit/trades$best_profit_enter)),4),c('------------------------------------------------'=""),round(summary(rm.neg(trades$profit/trades$best_profit_exit)),4)))
+```
+
+These plots demonstrate the power of the efficiency ratio in assessing entrance and exit strategies. We see that, among the winning trades, the exit strategy can be quite efficient. Indeed, nearly 25% of winning trades had an exit strategy which capitalized on the maximum potential profit (which are likely quite small). This in comparison to the entrance strategy which was less efficient. This suggests that an ADX exit cutoff of 25 may be somewhat appropriate, but an entrance cutoff of 50 may not be.
+
+## Conclusion
+
+We have seen how entrance and exit evaluation can lead to better information regarding strategy performance. Indeed it can be used to tweak indicator parameters, compare against other strategies, or construct composite strategies which incorporate many parts. Of course, many other quantities can be used to acheive this goal. For example, one might look at minimum profits (instead of maximums) to guage risk. Overall, this framework shows much promise; entire strategy systems can be evaluated and improved by understanding which components excel at various aspects of trading.
+

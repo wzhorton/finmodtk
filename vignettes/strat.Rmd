@@ -21,14 +21,16 @@ Consider a strategy variable which converts a price time series into a series of
 
 Let $R_t$ denote a (daily) return random variable where $R_t = \frac{P_{t}-P_{t-1}}{P_{t-1}}$. Similarly, let $LR_t = \log(\frac{P_t}{P_{t-1}})$ denote a log-return random variable.
 
-Let $E_t$ denote an equity variable where $E_t = \prod_{s \le t}(1+R_s)$. Similarly, denote a log-equity variable $LE_t = \sum_{s \le t}LR_s$. In settings where $E_t$ is used, $\exp(LE_t)$ may be substituted.
+Let $SR_t$ denote a strategy return where $SR_t = R_t\times S_t$, which denotes the returns made in a period using a given strategy. Similarly give the log variant $LSR_t = LR_t\times S_t$
+
+Let $E_t$ denote an equity variable where $E_t = \prod_{s \le t}(1+SR_s)$. Similarly, denote a log-equity variable $LE_t = \sum_{s \le t}LSR_s$. In settings where $E_t$ is used, $\exp(LE_t)$ may be substituted.
 
 ## Statistical Tests
 
-Many metrics are enhanced when properly tested. Speficically, it is valuable to test metrics against a strategy which does not depend on price or indicator information, a so-called random strategy, but otherwise behaves similarly in terms of signal frequency. A test is performed using the following steps:
+Many metrics are enhanced when properly tested. Specifically, it is valuable to test metrics against a strategy which does not depend on price or indicator information, a so-called random strategy, but otherwise behaves similarly in terms of signal frequency. A test is performed using the following steps:
 
 \begin{enumerate}
-  \item Backtest the strategy on a given backtest period
+  \item Back test the strategy on a given back test period
   \item Compute the metric of interest and a state transition count matrix
   \item Generate a random strategy series using the transition matrix
   \item Compute and save the metric of interest on this random series
@@ -36,75 +38,107 @@ Many metrics are enhanced when properly tested. Speficically, it is valuable to 
   \item Compare the observed metric value against the distribution of random values
 \end{enumerate}
 
-This process helps isolate the predictiveness of a strategy from other factors such as market conditions. 
+This process helps isolate the predictiveness of a strategy from other factors such as market conditions. Additionally, if simultaneously assessing multiple strategies and isolating the best performing one, this procedure can be replicated to accommodate for testing maximums.
 
-## Metrics of Value
+## Value Metrics
 
-These metrics assess general profitability of a strategy and are closely related to "per-trade" metrics, though they bear more use as testable quantities.
+These metrics assess general profitability of a strategy and are closely related to "per-trade" metrics, though they retain more use as testable quantities.
 
-#### Per-period average return
+### > *Per-Period Average Return*
 
 $$
-{\tt E}(R_t) \approx \frac{1}{n}\sum r_t
+{\tt E}(SR_t) \approx \frac{1}{n}\sum sr_t
 $$
 Comparison to zero is insufficient, but necessary. Testing this quantity is highly suggested as results may be misleading otherwise.
 
-## Predictiveness and Proper Back Testing
-
-Ultimately, the goal of virtually any investment strategy is to make money. More specifically, the goal is to pull in consistent profits over time which are appropriate to a desired level of risk. No matter what metric is used to measure the success of a strategy in fulfilling this goal, one thing is certain: that strategy must be somewhat successful in predicting some aspect of future price movement. In other words, good strategies are predictive. 
-
-How is predictiveness assessed? The answer lies in carefully selecting metrics and thoughtfully comparing them to relevant thresholds. The first benchmark which a strategy must surpass is that of a strategy which has no predictive power and is not based on price-derived information. Denote this strategy as $S^*(\cdot)$. This so-called ``random" strategy can be constructed by randomly sampling states in a manner consistent with the original strategy (such as by estimating a transition matrix or a time to transition distribution). 
-
-The value of a random strategy is in quantifying performance due to luck and/or positive market conditions. It is erroneous to assume that if a strategy produces positive results in a back test, that it must be due to predictiveness. In a single back test, a random strategy is likely to produce positive results to some degree. In performing multiple back tests simultaneously, the magnitude and likelihood of lucky random results is increased, making traditional analysis uncertain and often unreliable.
-
-To know that a strategy contains predictive power, it must perform so well that luck and/or market conditions could not explain it. In other words, predictive strategies worth consideration clearly defeat their random strategy counterparts, not just an arbitrary cutoff often utilized in traditional back testing. Statistically, this amounts to performing a hypothesis test. The null hypothesis is that a strategy is not predictive and it is tested by comparing an observed metric to the distribution of metrics for the random strategy.
-
-ADD SECTION ON BACK TESTING MULTIPLE VALUES AND LOOKING AT THE MAXIMUM. ALSO, ADD MORE ORGANIZATION, LESS PAPER FLOW AND MORE STATEMENTS OF WHAT AND HOW TO USE.
-
-## Metrics of Success
-
-In this section we review a collection of metrics which can be used to assess and compare strategies. In all cases it is recommended to test observed values obtained from a back test to the distribution of corresponding values which arise from corresponding random strategies. Although some mathematical results can be obtained directly for some metrics, numerical simulation is clear, flexible, and applicable to any scenario.
-
-#### Overall Returns
-
-Many metrics of overall return can be used to measure strategy performance. For example, the expected return per trade, given by $R(T)$, has the following form:
+### > *Per-Period Average Log-Return*
 
 $$
-E(R(T)) = E(\frac{P_{1}-P_{0}}{P_0}\times sign) \approx \frac{1}{n}\sum_{i=1}^n\frac{p_{1i}-p_{0i}}{p_{0i}}\times sign_i = \frac{1}{n}\sum_{i=1}^nr_i
+\exp({\tt E}(LSR_t)) \approx \exp\left(\frac{1}{n}\sum lsr_t \right) = \left(\prod\exp(lsr_t)\right)^\frac{1}{n}
 $$
-Alternatively, the log return can be used as a symmetric alternative. This can be given by:
+This will not be the same as the previously computed average return. This quantity preserves desirable symmetry results and may be more reliable when handling compound strategies over large time frames.
 
-$$
-E(LR(T)) = E(log(\frac{P_{1}}{P_0})\times sign) \approx \frac{1}{n}\sum_{i=1}^nlog(\frac{p_{1i}}{p_{0i}})\times sign_i = \frac{1}{n}\sum_{i=1}^nlr_i
-$$
-Note that exponentiating the result will bring it back to the return scale. Another option is to use a geometric average over a simple average. A geometric average accounts for the idea that returns will compound over time and will appropriately weight losses over wins (e.g. a 50% loss is more devastating than a 50% win is successful). The expression is given by:
+### > *Total Return*
 
-$$
-GE(R(T)) \approx \left(\prod_{i=1}^n1+r_i\right)^\frac{1}{n}
-$$
+If $T$ denotes the last observed time, the total return is $E_T$. On its own, this value is highly unreliable, however testing will reveal underlying significance. Additionally, using log equity may be more reliable.
 
-As stated, all three of these metrics measure the average return per trade. This is useful in comparing methods, but they can also be modified to measure overall return during a trading period. Simply remove the $\frac{1}{n}$ terms to compute aggregate return quantities. 
-
-#### Trade Frequency
-
-The simplest quantity to look at to quantify frequency is $N$, the number of trades occuring during a given period of time, where $n$ denotes an observed number of trades. Although sophisticated machinery exists (such as the Poisson point process), we take a simplified approach to this component since trade frequency is less consequential compared to returns.
-
-A more revealing metric is a state transition matrix. This is constructed by creating a square matrix which enumerates each state on both rows and columns. A cell belonging to row $x$ and column $y$ represents the number of times during the back-testing period that state transitioned from state $x$ to state $y$. Many quantities of interest can be extracted from this matrix. For example, the number of transitions from neutral to a different state represents the how likely a method is to go long versus short. Additionally, the number of self transitions represents the total amount of time spent in a particular state. 
-
-The win/loss ratio is a hybrid frequency-return metric which measures the success of a strategy without regard to magnitude. It is computed by:
+### > *Average Positive/Negative Return*
 
 $$
-\frac{Pr((P_1 - P_0)\times sign > 0)}{Pr((P_1 - P_0)\times sign < 0)} \approx \frac{\#winners}{\#losers} = \frac{\sum_{i=1}^nI(r_i>0)}{\sum_{i=1}^nI(r_i < 0)}
+{\tt E}^+(SR_t) \approx \frac{1}{n^+}\sum sr_t^+
+$$
+This represents the expected upside given positive return. The notation denotes the average of only the positive returns and the log return equivalent is easily derived. The expected negative is similar:
+
+$$
+{\tt E}^-(SR_t) \approx \frac{1}{n^-}\sum sr_t^-
 $$
 
-## Metrics of Risk
-
-The quantities discussed previously are designed to offer points of comparison which highlight meaningful differences between strategy success. This section focuses on the opposite: strategy failure. Due to randomness, all strategies will make losing trades, but the magnitude of these losses is important to consider beyond how it affects average returns. Insurance companies whic are responsible for paying out claims assess risk from three angles: severity or 
+Comparing magnitudes of these quantities gives some sense of skewness in returns.
 
 
-ERROR <ETRICSNTOO
+## Rate and Ratio Metrics
 
-VAR should be on a period basis. I.e. look at what the TVAR is for a daily period or over the course of the average trade length. Note that this is independent of a strategy. Perhaps then the value at risk ought to be computed against your equity curve!! How do you compute an equity curve? Start with 1 dollar and just roll with daily returns multiplying. Make sure to negate if gone long. Also, one could generate random curves in a monte carlo fashion, but this takes longer. In fact, equity curves may be a better object than a trade operator because 1) they don't require arbitrary reduction to the per trade level but rather maintain time series, 2) they capture time more naturally as a structure instrad of a covariate. Per trade operators help give you information about expected trades, but not about anything else. Everything else, which is more honest, can be found in equity curves.
+These metrics quantify relative strategy properties, forming a more complete picture of strategy performance.
+
+### > *Win/Loss Ratio*
+
+$$
+\frac{{\tt Pr}(SR_t > 0)}{{\tt Pr}(SR_t < 0)} \approx \frac{\sum I(sr_t > 0)}{\sum I(sr_t < 0)}
+$$
+Measures number of wins per loss. $I(\cdot)$ denotes an indicator function. Can be used in conjunction with ratio of partial expected returns. Note the inequality strictness.
+
+### > *Error Rates*
+
+$$
+{\tt Pr}(SR_t < 0 | R_t > 0) \approx \frac{\sum I(sr_t < 0, r_t > 0)}{\sum I(r_t > 0)};\quad {\tt Pr}(SR_t < 0 | R_t < 0) \approx \frac{\sum I(sr_t < 0, r_t < 0)}{\sum I(r_t < 0)}
+$$
+
+Measures the percent of incorrect strategy periods, both positive and negative. In both cases the result is a negative strategy return.
+
+### > *Success Rates*
+
+$$
+{\tt Pr}(SR_t > 0 | R_t > 0) \approx \frac{\sum I(sr_t > 0, r_t > 0)}{\sum I(r_t > 0)};\quad {\tt Pr}(SR_t > 0 | R_t < 0) \approx \frac{\sum I(sr_t > 0, r_t < 0)}{\sum I(r_t < 0)}
+$$
+
+Measures percent of correct strategy periods, both positive and negative. In both cases the result is a positive strategy return.
+
+### > *Missed Opportunity Rates*
+
+$$
+{\tt Pr}(SR_t = 0 | R_t > 0) \approx \frac{\sum I(sr_t > 0, r_t > 0)}{\sum I(r_t > 0)};\quad {\tt Pr}(SR_t = 0 | R_t < 0) \approx \frac{\sum I(sr_t = 0, r_t < 0)}{\sum I(r_t < 0)}
+$$
+
+Measures the percent of upside and downside movements missed through not entering a trade. 
+
+## Metrics of Risk and Reward
+
+These metrics attempt to capture extreme equity curve behavior. Testing these quantities can be done, but interpretation must be done carefully.
+
+### > *Standard Deviation*
+
+$$
+{\tt SD}(SR_t) \approx \sqrt{\frac{1}{n-1}\sum(sr_t - \bar{sr})^2}
+$$
+Measures per-period volatility in price. Can be used to determine levels of risk and reward in a single period.
+
+### > *Value at Risk*
+
+$$
+{\tt VaR}_{0.05}(SR_t) \equiv 0.05 = {\tt Pr}(SR_t < {\tt VaR}) \approx \frac{1}{n}\sum I(sr_t < {\tt VaR})
+$$
+
+Value defined by an extreme percentile and represents a threshold for extremity.
+
+### > *Tail Value at Risk*
+
+$$
+{\tt TVar}_{0.05}(SR_t) = {\tt E}(SR_t|SR_t < {\tt VaR}) \approx \frac{\sum sr_t\times I(sr_t < {\tt VaR})}{\sum I(sr_t < {\tt VaR})}
+$$
+
+An extension of the value at risk. Measures expected behavior given the extremity threshold is breached. Note that the inequality reverses when handling reward measures.
+
+
 
 
 

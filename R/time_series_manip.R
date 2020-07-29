@@ -34,3 +34,27 @@ as_prices <- function(returns, p0 = 1){
 price_norm <- function(prices){
   as_prices(as_returns(prices))
 }
+
+#' Strategy Return
+#' 
+#' Computes strategy returns given a strategy series which maps strategy states to 
+#' 1 for long positions, -1 for short positions, and 0 for all others.
+#' 
+#' @export
+
+strat_returns <- function(prices, strats){
+  r <- as_returns(prices)
+  r*strats
+}
+
+#' Equity Curve
+#' 
+#' Computes the equity curve of a strategy over a price series.
+#' 
+#' @export
+
+equity_curve <- function(prices, strats){
+  r <- as_returns(prices)
+  sr <- r*strats
+  cumprod(1+sr)
+}

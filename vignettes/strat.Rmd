@@ -29,14 +29,12 @@ Let $E_t$ denote an equity variable where $E_t = \prod_{s \le t}(1+SR_s)$. Simil
 
 Many metrics are enhanced when properly tested. Specifically, it is valuable to test metrics against a strategy which does not depend on price or indicator information, a so-called random strategy, but otherwise behaves similarly in terms of signal frequency. A test is performed using the following steps:
 
-\begin{enumerate}
-  \item Back test the strategy on a given back test period
-  \item Compute the metric of interest and a state transition count matrix
-  \item Generate a random strategy series using the transition matrix
-  \item Compute and save the metric of interest on this random series
-  \item Repeat steps 3 and 4 many many times
-  \item Compare the observed metric value against the distribution of random values
-\end{enumerate}
+1. Back test the strategy on a given back test period
+2. Compute the metric of interest and a state transition count matrix
+3. Generate a random strategy series using the transition matrix
+4. Compute and save the metric of interest on this random series
+5. Repeat steps 3 and 4 many many times
+6. Compare the observed metric value against the distribution of random values
 
 This process helps isolate the predictiveness of a strategy from other factors such as market conditions. Additionally, if simultaneously assessing multiple strategies and isolating the best performing one, this procedure can be replicated to accommodate for testing maximums.
 

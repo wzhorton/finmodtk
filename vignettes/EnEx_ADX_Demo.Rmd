@@ -9,6 +9,8 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
+___Edit (29 July 2020): Metrics of comparison are shifting from trade-centric to equity curve based. Therefore, the exact implementation of these ideas is obsolete, yet the underlying principles still retain some value for future inspiration.___
+
 Often a technical investment strategy is evaluated using some function of profit. Win/loss ratio or average return are common examples. However, a strategy might be thought of as two separate elements: an entrance component and an exit component. Evaluating these components independently can reveal strengths and weaknesses of a strategy, allowing an investor to use it appropriately. In this write-up we propose a framework for seperate entrance/exit evaluation, devlop an example metric, and demonstrate its use on a simple Forex investment strategy.
 
 

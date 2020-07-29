@@ -104,7 +104,7 @@ Measures percent of correct strategy periods, both positive and negative. In bot
 ### > *Missed Opportunity Rates*
 
 $$
-{\tt Pr}(SR_t = 0 | R_t > 0) \approx \frac{\sum I(sr_t > 0, r_t > 0)}{\sum I(r_t > 0)};\quad {\tt Pr}(SR_t = 0 | R_t < 0) \approx \frac{\sum I(sr_t = 0, r_t < 0)}{\sum I(r_t < 0)}
+{\tt Pr}(SR_t = 0 | R_t > 0) \approx \frac{\sum I(sr_t = 0, r_t > 0)}{\sum I(r_t > 0)};\quad {\tt Pr}(SR_t = 0 | R_t < 0) \approx \frac{\sum I(sr_t = 0, r_t < 0)}{\sum I(r_t < 0)}
 $$
 
 Measures the percent of upside and downside movements missed through not entering a trade. 
